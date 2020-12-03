@@ -33,6 +33,11 @@ if __name__ == '__main__' :
     # used to record the time at which we processed current frame 
     new_frame_time = 0
 
+
+    last1 = 0
+    last2 = 0 #les deux derniers coordonnées stockées
+    nbEnvoi = 1 #nb de renvois depuis le dernier top
+
     # Exit if video not opened.
     if not video.isOpened():
         print ("Could not open video")
@@ -116,6 +121,18 @@ if __name__ == '__main__' :
     
         # Display FPS on frame
         cv2.putText(frame, "FPS : " + str(int(fps)), (100,50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50,170,50), 2);
+        
+
+        print("p1 : ", p1, "    p2 : ", p2)
+
+        if p2[0] >= last1 and last1 <= last2:
+            print('TOP  ', 'Vitesse =', fps/nbEnvoi, ' coup de rame/seconde')
+            #time.sleep(2)
+            nbEnvoi = 1
+        last2 = last1
+        last1 = p2[0]
+        nbEnvoi = nbEnvoi + 1
+        #time.sleep(0.04)
 
         # show frame
         cv2.imshow('MultiTracker', frame)
