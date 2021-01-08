@@ -28,6 +28,20 @@ sockets_list = [server_socket]
 
 # List of connected clients - socket as a key, user header and name as data
 clients = {}
+# Tableau contenant les username
+username = {}
+# Tableau contenant l'equipe de la personne
+team = {}
+# Tableau contenant le role de la personne
+role = {}
+# Tableau contenant la position de la personne
+rolePosition = {}
+# Tableau team 1
+team1 = []
+# Tableau team 2
+team2 = []
+
+size_team = 1
 
 print(f'Listening for connections on {IP}:{PORT}...')
 
@@ -92,13 +106,52 @@ while True:
             # Add accepted socket to select.select() list
             sockets_list.append(client_socket)
 
+            ####################################################### INITIALISATION DONNEES ################################################################
+            
             # Also save username and username header
             clients[client_socket] = user
+            # sauvegarder le username en clair
+            username[client_socket] = user['data'].decode('utf-8')
+            # sauvegarder l'equipe
+            team[client_socket] = username[client_socket][0]
+            # sauvegarder le role
+            role[client_socket] = username[client_socket][2]
+            # sauvegarder la position
+            rolePosition[client_socket] = username[client_socket][3]
+
+            if team[client_socket] == 1:
+                team1.append(client_socket)
+            else:
+                team2.append(client_socket)
 
             print('Accepted new connection from {}:{}, username: {}'.format(*client_address, user['data'].decode('utf-8')))
 
+            ###############################################################################################################################################
+
         # Else existing socket is sending a message
-        else:
+        else: 
+
+            if len(team1) == size_team and len(team2) == size_team:
+
+            ###################### message de start #########################
+
+                # Wait for user to input a message
+                message = input(f'{my_username} > ')
+
+                # If message is not empty - send it
+                if message:
+
+                    # Encode message to bytes, prepare header and convert to bytes, like for username above, then send
+                    message = message.encode('utf-8')
+                    message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
+
+                    #Iterate over connected clients and broadcast message
+                    for client_socket in clients:
+
+                        # Send message
+                        server_socket.send(message_header + message)
+
+            ##################################################################
 
             # Receive message
             message = receive_message(notified_socket)
@@ -112,6 +165,16 @@ while True:
 
                 # Remove from our list of users
                 del clients[notified_socket]
+                del username[notified_socket]
+                del team[notified_socket]
+                del role[notified_socket]
+                del rolePosition[notified_socket]
+                #for i in team1:
+                #    if team1[i] == notified_socket:
+                #        del team1[i]
+                #for j in team2:
+                #    if team2[j] == notified_socket:
+                #        del team2[j]
 
                 continue
 
@@ -119,4 +182,5 @@ while True:
             user = clients[notified_socket]
 
             print(f'Received message from {user["data"].decode("utf-8")}: {message["data"].decode("utf-8")}')
+
 
