@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 import sys
 import time
 
@@ -26,6 +27,7 @@ if __name__ == '__main__' :
 
     # Read video
     video = cv2.VideoCapture("drap.mp4")
+    #video = cv2.VideoCapture(0)
 
     # used to record the time when we processed last frame 
     prev_frame_time = 0
@@ -45,15 +47,19 @@ if __name__ == '__main__' :
 
     # Read first frame.
     ok, frame = video.read()
+    #frame = cv2.flip(frame, 1)
     if not ok:
         print ("Cannot read video file")
         sys.exit()
-    
+            
+    #frame = cv2.resize(frame,(640,320),fx=0,fy=0, interpolation = cv2.INTER_CUBIC)
+
     # Define an initial bounding box
     #bbox = (287, 23, 86, 320)
 
     ## Select boxes
     bboxes = []
+    
     # Create MultiTracker object
     multiTracker = cv2.MultiTracker_create()
 
@@ -88,7 +94,7 @@ if __name__ == '__main__' :
         ok, frame = video.read()
         if not ok:
             break
-        
+        #frame = cv2.resize(frame,(640,320),fx=0,fy=0, interpolation = cv2.INTER_CUBIC)
         # time when we finish processing for this frame 
         new_frame_time = time.time() 
 
@@ -125,7 +131,7 @@ if __name__ == '__main__' :
 
         print("p1 : ", p1, "    p2 : ", p2)
 
-        if p2[0] >= last1 and last1 <= last2:
+        if p2[0] > last1 and last1 <= last2 and nbEnvoi>6:
             print('TOP  ', 'Vitesse =', fps/nbEnvoi, ' coup de rame/seconde')
             #time.sleep(2)
             nbEnvoi = 1
@@ -143,3 +149,7 @@ if __name__ == '__main__' :
         if k == 27 : break
 
     
+    # After the loop release the cap object 
+    #vid.release() 
+    # Destroy all the windows 
+    cv2.destroyAllWindows()         
