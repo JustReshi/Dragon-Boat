@@ -1,5 +1,6 @@
 import socket
 import select
+import time
 
 HEADER_LENGTH = 10
 
@@ -41,7 +42,17 @@ team1 = []
 # Tableau team 2
 team2 = []
 
+TOP_tab = []
+TOP_bat = 0
+
 size_team = 1
+start = 'no'
+
+deltaTOT = 0
+
+#index coordination qui compte le nombre de TOP reçu dans un cycle (toutes les personnes ont fait un TOP)
+z = 0
+zMAX = 3
 
 print(f'Listening for connections on {IP}:{PORT}...')
 
@@ -129,32 +140,34 @@ while True:
             ###############################################################################################################################################
 
         # Else existing socket is sending a message
-        else: 
-
-            if len(team1) == size_team and len(team2) == size_team:
+        else:
 
             ###################### message de start #########################
 
-                # Wait for user to input a message
-                message = input(f'{my_username} > ')
+            tmp = receive_message(notified_socket)
+
+            if tmp['data'].decode('utf-8') == 'ready':
+                start = input("start? (yes/no) : ")
+                tmp = False
 
                 # If message is not empty - send it
-                if message:
+                if start:
 
                     # Encode message to bytes, prepare header and convert to bytes, like for username above, then send
-                    message = message.encode('utf-8')
-                    message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
+                    start = start.encode('utf-8')
+                    start_header = f"{len(start):<{HEADER_LENGTH}}".encode('utf-8')
 
-                    #Iterate over connected clients and broadcast message
+                    # Iterate over connected clients and broadcast message
                     for client_socket in clients:
 
                         # Send message
-                        server_socket.send(message_header + message)
+                        client_socket.send(start_header + start)
 
             ##################################################################
 
             # Receive message
             message = receive_message(notified_socket)
+            #TOP_tab[]
 
             # If False, client disconnected, cleanup
             if message is False:
@@ -182,5 +195,33 @@ while True:
             user = clients[notified_socket]
 
             print(f'Received message from {user["data"].decode("utf-8")}: {message["data"].decode("utf-8")}')
+
+            ############################# coordination pagayeurs/batteur ###################################
+
+            # on stocke le moment où le batteur fait un TOP
+            if role[notified_socket] == 'b':
+                TOP_bat = time.time()
+                z+=1
+
+            # on stocke le moment où les pagayeurs font un TOP
+            else: 
+                TOP_tab.append(time.time())
+                z+=1
+
+            # quand tout le monde a fait un TOP on calcule l'écart total
+            if z == zMAX:
+                for h in TOP_tab:
+                    deltaTOT += h - TOP_bat
+                # utiliser deltaTOT pour calculer la vitesse
+                print("deltaTOP = ", deltaTOT)
+                # reset des variables
+                z = 0
+                deltaTOT = 0
+                TOP_tab.clear()
+
+            #################################################################################################
+
+        #else:
+            #message = receive_message(notified_socket)
 
 
