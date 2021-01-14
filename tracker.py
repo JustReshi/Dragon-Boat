@@ -2,10 +2,63 @@ import cv2
 import numpy as np
 import sys
 import time
+import socket
+import select
+import errno
 
 (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split('.')
 
 if __name__ == '__main__' :
+
+    HEADER_LENGTH = 10
+
+    IP = "127.0.0.1"
+    PORT = 1234
+    my_username = input("Username (equipe_role ex: 1_p1): ")
+    start = 'no'
+    my_role = my_username[2]
+
+    # Create a socket
+    # socket.AF_INET - address family, IPv4, some otehr possible are AF_INET6, AF_BLUETOOTH, AF_UNIX
+    # socket.SOCK_STREAM - TCP, conection-based, socket.SOCK_DGRAM - UDP, connectionless, datagrams, socket.SOCK_RAW - raw IP packets
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # Connect to a given ip and port
+    client_socket.connect((IP, PORT))
+
+    # Set connection to non-blocking state, so .recv() call won;t block, just return some exception we'll handle
+    client_socket.setblocking(False)
+
+    # Prepare username and header and send them
+    # We need to encode username to bytes, then count number of bytes and prepare header of fixed size, that we encode to bytes as well
+    username = my_username.encode('utf-8')
+    username_header = f"{len(username):<{HEADER_LENGTH}}".encode('utf-8')
+    client_socket.send(username_header + username)
+
+    def receive_message(client_socket):
+
+        try:
+
+            # Receive our "header" containing message length, it's size is defined and constant
+            message_header = client_socket.recv(HEADER_LENGTH)
+
+            # If we received no data, client gracefully closed a connection, for example using socket.close() or socket.shutdown(socket.SHUT_RDWR)
+            if not len(message_header):
+                return False
+
+            # Convert header to int value
+            message_length = int(message_header.decode('utf-8').strip())
+
+            # Return an object of message header and message data
+            return {'header': message_header, 'data': client_socket.recv(message_length)}
+
+        except:
+
+            # If we are here, client closed connection violently, for example by pressing ctrl+c on his script
+            # or just lost his connection
+            # socket.close() also invokes socket.shutdown(socket.SHUT_RDWR) what sends information about closing the socket (shutdown read/write)
+            # and that's also a cause when we receive an empty message
+            return False
 
     # Set up tracker.
     # Instead of MIL, you can also use
@@ -26,7 +79,10 @@ if __name__ == '__main__' :
     }
 
     # Read video
-    video = cv2.VideoCapture("drap.mp4")
+    if my_role == 'p':
+        video = cv2.VideoCapture("drap.mp4")
+    if my_role == 'b':
+        video = cv2.VideoCapture("custom_batteur2.mp4")
     #video = cv2.VideoCapture(0)
 
     # used to record the time when we processed last frame 
@@ -36,9 +92,13 @@ if __name__ == '__main__' :
     new_frame_time = 0
 
 
-    last1 = 0
-    last2 = 0 #les deux derniers coordonnées stockées
-    nbEnvoi = 1 #nb de renvois depuis le dernier top
+    lastp1 = 0
+    lastp2 = 0 #les deux derniers coordonnées stockées
+    nbEnvoip = 1 #nb de renvois depuis le dernier top
+
+    lastb1 = 0
+    lastb2 = 0 #les deux derniers coordonnées stockées
+    nbEnvoib = 1 #nb de renvois depuis le dernier top
 
     # Exit if video not opened.
     if not video.isOpened():
@@ -62,6 +122,7 @@ if __name__ == '__main__' :
     
     # Create MultiTracker object
     multiTracker = cv2.MultiTracker_create()
+
 
     # OpenCV's selectROI function doesn't work for selecting multiple objects in Python
     # So we will call this function in a loop till we are done selecting all objects
@@ -88,6 +149,26 @@ if __name__ == '__main__' :
 
     # Initialize tracker with first frame and bounding box
     #ok = tracker.init(frame, bbox)
+
+
+    ################################################################# code à modifier ######################################################################
+
+
+    ########################### attendre le start ##########################
+
+    message = 'ready'
+    message = message.encode('utf-8')
+    message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
+    # send message
+    client_socket.send(message_header + message)
+
+    while start != 'yes':
+        tmp = receive_message(client_socket)
+        if tmp != False:
+            start = tmp['data'].decode('utf-8')
+
+
+    ########################################################################################################################################################
 
     while True:
         # Read a new frame
@@ -117,10 +198,10 @@ if __name__ == '__main__' :
         (x, y, w, h) = [int(v) for v in boxes[0]]
         p1 = (int(x + w/2), int(y + h/2))
 
-        (x, y, w, h) = [int(v) for v in boxes[1]]
-        p2 = (int(x + w/2), int(y + h/2))
+        #(x, y, w, h) = [int(v) for v in boxes[1]]
+        #p2 = (int(x + w/2), int(y + h/2))
 
-        cv2.line(frame, p1, p2, (255, 0, 0), 5) 
+        #cv2.line(frame, p1, p2, (255, 0, 0), 5) 
 
         # Display tracker type on frame
         cv2.putText(frame, tracker_type + " Tracker", (100,20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50,170,50),2);
@@ -129,15 +210,38 @@ if __name__ == '__main__' :
         cv2.putText(frame, "FPS : " + str(int(fps)), (100,50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50,170,50), 2);
         
 
-        print("p1 : ", p1, "    p2 : ", p2)
+        #print("p1 : ", p1, "    p2 : ", p2)
+        print("p1 : ", p1)
 
-        if p2[0] > last1 and last1 <= last2 and nbEnvoi>6:
-            print('TOP  ', 'Vitesse =', fps/nbEnvoi, ' coup de rame/seconde')
+
+        if my_role == 'p' and p1[0] < lastp1 and lastp1 >= lastp2 and nbEnvoip>6:
+            print('TOP  ', 'Vitesse =', fps/nbEnvoip, ' coup de rame/seconde')
+            message = 'TOP'
+            # Encode message to bytes, prepare header and convert to bytes,  then send
+            message = message.encode('utf-8')
+            message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
+            # send message
+            client_socket.send(message_header + message)
             #time.sleep(2)
             nbEnvoi = 1
-        last2 = last1
-        last1 = p2[0]
-        nbEnvoi = nbEnvoi + 1
+        lastp2 = lastp1
+        lastp1 = p1[0]
+        nbEnvoip = nbEnvoip + 1
+        #time.sleep(0.04)
+
+        if my_role == 'b' and p1[1] < lastb1 and lastb1 >= lastb2 and nbEnvoib>6:
+            print('TOP  ', 'Vitesse =', fps/nbEnvoib, ' coup de rame/seconde')
+            message = 'TOP'
+            # Encode message to bytes, prepare header and convert to bytes,  then send
+            message = message.encode('utf-8')
+            message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
+            # send message
+            client_socket.send(message_header + message)
+            #time.sleep(2)
+            nbEnvoi = 1
+        lastb2 = lastb1
+        lastb1 = p1[1]
+        nbEnvoib = nbEnvoib + 1
         #time.sleep(0.04)
 
         # show frame
