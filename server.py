@@ -1,11 +1,12 @@
 import socket
 import select
 import time
+import sys
 
 HEADER_LENGTH = 10
 
-IP = "127.0.0.1"
-PORT = 1234
+IP = input("adresse IP du serveur : ")
+PORT = int(input("PORT du serveur : "))
 
 # Create a socket
 # socket.AF_INET - address family, IPv4, some otehr possible are AF_INET6, AF_BLUETOOTH, AF_UNIX
@@ -46,7 +47,9 @@ TOP_tab = []
 TOP_bat = 0
 
 size_team = 1
-start = 'no'
+start = 'n'
+
+tmp = False
 
 
 FacteurVitesse = 0.167  #Conversion Coup de pagaie/minutes > km/heure
@@ -58,7 +61,7 @@ FacteurPerteSyncro = 1  #importance de la syncro
 
 #index coordination qui compte le nombre de TOP reçu dans un cycle (toutes les personnes ont fait un TOP)
 z = 0
-zMAX = 3
+zMAX = input(" Nombre de personne dans l'equipe (batteur inclu) : ")
 
 vitesseFinale = 0
 VitBatteur = 1
@@ -67,6 +70,8 @@ deltaTOT = 0
 deltaMoyen = 0
 decalage = 0
 
+distanceAParcourir = input("Distance à parcourir(en mètres) : ") # distance en mètres
+distanceParcourue = 0
 
 print(f'Listening for connections on {IP}:{PORT}...')
 
@@ -159,9 +164,9 @@ while True:
             ###################### message de start #########################
 
             tmp = receive_message(notified_socket)
-
+            
             if tmp['data'].decode('utf-8') == 'ready':
-                start = input("start? (yes/no) : ")
+                start = input("start? (y) : ")
                 tmp = False
 
                 # If message is not empty - send it
@@ -234,7 +239,15 @@ while True:
                 decalage = deltaMoyen/VitBatteur
                 if decalage>0.05:
                     vitesseFinale = vitesseFinale*(1-(decalage*FacteurPerteSyncro))
+                    #if vitesseFinale < 0:
+                    #    vitesseFinale = 0
                 print("Vitesse Finale (km/h) = ", vitesseFinale)
+                distanceParcourue += VitBatteur * (vitesseFinale/3.6)
+                print("Distance parcourue = ", distanceParcourue, " / ", distanceAParcourir)
+                if distanceParcourue >= distanceAParcourir:
+                    print("FINISH!")
+                    time.sleep(10)
+                    sys.exit()
                 # reset des variables
                 z = 0
                 deltaTOT = 0

@@ -1,3 +1,4 @@
+
 import cv2
 import numpy as np
 import sys
@@ -15,7 +16,7 @@ if __name__ == '__main__' :
     IP = "127.0.0.1"
     PORT = 1234
     my_username = input("Username (equipe_role ex: 1_p1): ")
-    start = 'no'
+    start = 'n'
     my_role = my_username[2]
 
     # Create a socket
@@ -162,7 +163,7 @@ if __name__ == '__main__' :
     # send message
     client_socket.send(message_header + message)
 
-    while start != 'yes':
+    while start != 'y':
         tmp = receive_message(client_socket)
         if tmp != False:
             start = tmp['data'].decode('utf-8')
@@ -257,3 +258,4 @@ if __name__ == '__main__' :
     #vid.release() 
     # Destroy all the windows 
     cv2.destroyAllWindows()         
+

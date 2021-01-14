@@ -8,7 +8,7 @@ HEADER_LENGTH = 10
 IP = "127.0.0.1"
 PORT = 1234
 my_username = input("Username (equipe_role ex: 1_p1): ")
-start = 'no'
+start = 'n'
 my_role = my_username[2]
 
 # Create a socket
@@ -76,7 +76,7 @@ message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
 # send message
 client_socket.send(message_header + message)
 
-while start != 'yes':
+while start != 'y':
     tmp = receive_message(client_socket)
     if tmp != False:
         start = tmp['data'].decode('utf-8')
@@ -104,7 +104,7 @@ if my_role == 'p':
             time.sleep(0.04)
 
 else:
-    # code pour le batteur à remplacer
+    # code pour le batteur
     while True:
 
         for i in range (len(coords)):
