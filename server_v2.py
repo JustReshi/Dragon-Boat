@@ -114,7 +114,7 @@ logging.info('importance de la syncro = %s', facteurPerteSyncro)
 
 # index coordination qui compte le nombre de TOP reçu dans un cycle (toutes les personnes ont fait un TOP)
 z = 0
-zMAX = input(" Nombre de personne dans l'equipe (batteur inclu) : ")
+zMAX = int(input("Nombre de personne dans l'equipe (batteur inclu) : "))
 
 vitesseFinale = 0  # résultat du calcul de vitesse
 VitBatteur = 1  # vitesse de chaque batteur
@@ -122,7 +122,7 @@ deltaTOT = 0
 deltaMoyen = 0
 decalage = 0
 
-distanceAParcourir = input("Distance à parcourir(en mètres) : ")  # distance en mètres
+distanceAParcourir = int(input("Distance à parcourir(en mètres) : "))  # distance en mètres
 distanceParcourue = 0
 
 # récupération des paramètres dans le fichier json de config
@@ -234,8 +234,7 @@ while True:
             else:
                 team2.append(client_socket)
 
-            print('Accepted new connection from {}:{}, username: {}'.format(*client_address,
-                                                                            user['data'].decode('utf-8')))
+            print('Accepted new connection from {}:{}, username: {}'.format(*client_address,user['data'].decode('utf-8')))
 
             ###############################################################################################################################################
 
@@ -344,4 +343,3 @@ while True:
                 z = 0
                 deltaTOT = 0
                 TOP_tab.clear()
-
