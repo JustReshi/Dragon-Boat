@@ -61,7 +61,7 @@ FacteurPerteSyncro = 1  #importance de la syncro
 
 #index coordination qui compte le nombre de TOP reçu dans un cycle (toutes les personnes ont fait un TOP)
 z = 0
-zMAX = input(" Nombre de personne dans l'equipe (batteur inclu) : ")
+zMAX = int(input("Nombre de personne dans l'equipe (batteur inclu) : "))
 
 vitesseFinale = 0
 VitBatteur = 1
@@ -70,7 +70,7 @@ deltaTOT = 0
 deltaMoyen = 0
 decalage = 0
 
-distanceAParcourir = input("Distance à parcourir(en mètres) : ") # distance en mètres
+distanceAParcourir = int(input("Distance à parcourir(en mètres) : ")) # distance en mètres
 distanceParcourue = 0
 
 print(f'Listening for connections on {IP}:{PORT}...')
@@ -186,7 +186,7 @@ while True:
 
             # Receive message
             message = receive_message(notified_socket)
-            #TOP_tab[]
+
 
             # If False, client disconnected, cleanup
             if message is False:
