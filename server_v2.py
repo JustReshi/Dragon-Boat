@@ -76,10 +76,9 @@ def parse(filename):
 
 
 # crée le fichier json
-def create_json(filename, fvi, pagAbs, redPag, tolSync, facPSync):
+def create_json(filename, fvi, redPag, tolSync, facPSync):
     data = {
         'facteurVitesse': fvi,
-        'pagayeurABS': pagAbs,
         'reductionPagayeur': redPag,
         'toleranceSyncro': tolSync,
         'facteurPerteSyncro': facPSync,
@@ -100,14 +99,12 @@ def representsFloat(s):
 
 # déclaration des paramètres par défaut
 facteurVitesse = 0.167  # Conversion Coup de pagaie/minutes > km/heure
-pagayeurABS = 0  # nb de pagayeurs absents
 reductionPagayeur = 0.05  # réduction de la vitesse par pagayeur absent (10 pagayeur de base)
 toleranceSyncro = 0.05  # seuil de syncro au dessus duquel on a des malus
 facteurPerteSyncro = 1  # importance de la syncro
 
 #print logs
 logging.info('Conversion Coup de pagaies par minutes en km/h : %s', facteurVitesse)
-logging.info('Nombre de pagayeurs absent : %s', pagayeurABS)
 logging.info('Réduction de la vitesse par pagayeur absent : %s', reductionPagayeur)
 logging.info('Seuil de syncro au dessus duque on a des malus = %s', toleranceSyncro)
 logging.info('importance de la syncro = %s', facteurPerteSyncro)
@@ -129,14 +126,11 @@ distanceParcourue = 0
 if os.path.exists(fileconfig):
     data = parse(fileconfig)
     if not data:
-        create_json(fileconfig, facteurVitesse, pagayeurABS, reductionPagayeur, toleranceSyncro, facteurPerteSyncro)
+        create_json(fileconfig, facteurVitesse, reductionPagayeur, toleranceSyncro, facteurPerteSyncro)
     else:
         # check if data exist and  is float
         if 'facteurVitesse' in data and representsFloat(data['facteurVitesse']):
             facteurVitesse = data['facteurVitesse']
-
-        if 'pagayeurABS' in data and (data['pagayeurABS']):
-            pagayeurABS = data['pagayeurABS']
 
         if 'reductionPagayeur' in data and (data['reductionPagayeur']):
             reductionPagayeur = data['reductionPagayeur']
@@ -151,7 +145,7 @@ if os.path.exists(fileconfig):
 else:
     f = open(fileconfig, 'w')
     f.close()
-    create_json(fileconfig, facteurVitesse, pagayeurABS, reductionPagayeur, toleranceSyncro, facteurPerteSyncro)
+    create_json(fileconfig, facteurVitesse, reductionPagayeur, toleranceSyncro, facteurPerteSyncro)
 
 print(f'Listening for connections on {IP}:{PORT}...')
 
@@ -297,8 +291,7 @@ while True:
 
             ############################# coordination pagayeurs/batteur ###################################
 
-            vitesseFinale = (1 / VitBatteur) * 60 * 0.167 * (
-                    1 - reductionPagayeur * pagayeurABS)  # vitesse avant changement
+            vitesseFinale = (1 / VitBatteur) * 60 * 0.167 * (1 - reductionPagayeur * (11-zMax))  # vitesse avant changement
 
             # on stocke le moment où le batteur fait un TOP
             if role[notified_socket] == 'b':
@@ -320,7 +313,7 @@ while True:
                 # print log
                 logging.info("Décalage de tous les pagaieurs avec le batteur : %s", deltaTOT)
 
-                deltaMoyen = deltaTOT / ((zMAX - 1) - pagayeurABS)
+                deltaMoyen = deltaTOT / (zMAX - 1)
                 decalage = deltaMoyen / VitBatteur
                 if decalage > 0.05:
                     vitesseFinale = vitesseFinale * (1 - (decalage * facteurPerteSyncro))
