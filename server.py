@@ -48,11 +48,25 @@ TOP_bat = 0
 size_team = 1
 start = 'no'
 
-deltaTOT = 0
+
+FacteurVitesse = 0.167  #Conversion Coup de pagaie/minutes > km/heure
+PagayeurABS = 0     #nb de pagayeurs absents
+ReductionPagayeur = 0.05  #réduction de la vitesse par pagayeur absent (10 pagayeur de base)
+ToléranceSyncro = 0.05  #seuil de syncro au dessus duquel on a des malus
+FacteurPerteSyncro = 1  #importance de la syncro
+
 
 #index coordination qui compte le nombre de TOP reçu dans un cycle (toutes les personnes ont fait un TOP)
 z = 0
 zMAX = 3
+
+vitesseFinale = 0
+VitBatteur = 1
+
+deltaTOT = 0
+deltaMoyen = 0
+decalage = 0
+
 
 print(f'Listening for connections on {IP}:{PORT}...')
 
@@ -198,6 +212,8 @@ while True:
 
             ############################# coordination pagayeurs/batteur ###################################
 
+            vitesseFinale = (1/VitBatteur) * 60 * 0.167 * (1-ReductionPagayeur*PagayeurABS)    #vitesse avant changement
+
             # on stocke le moment où le batteur fait un TOP
             if role[notified_socket] == 'b':
                 TOP_bat = time.time()
@@ -211,17 +227,20 @@ while True:
             # quand tout le monde a fait un TOP on calcule l'écart total
             if z == zMAX:
                 for h in TOP_tab:
-                    deltaTOT += h - TOP_bat
+                    deltaTOT += abs(h - TOP_bat)
                 # utiliser deltaTOT pour calculer la vitesse
                 print("deltaTOP = ", deltaTOT)
+                deltaMoyen = deltaTOT/((zMAX-1)-PagayeurABS)
+                decalage = deltaMoyen/VitBatteur
+                if decalage>0.05:
+                    vitesseFinale = vitesseFinale*(1-(decalage*FacteurPerteSyncro))
+                print("Vitesse Finale (km/h) = ", vitesseFinale)
                 # reset des variables
                 z = 0
                 deltaTOT = 0
                 TOP_tab.clear()
 
-            #################################################################################################
 
-        #else:
-            #message = receive_message(notified_socket)
+            #################################################################################################
 
 
